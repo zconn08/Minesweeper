@@ -6,17 +6,30 @@ class Minesweeper
   end
 
   def play_turn
+    board.render
     puts "Please select a location to reveal: "
     x, y = gets.chomp.strip.split(',').map(&:to_i)
     tile = board.grid[x][y]
-    p tile
+    tile.reveal
+    return true if over?(tile)
+    false
   end
 
-  def loser?
+  def loser?(tile)
+    tile.bombed?
+  end
 
+  def over?(tile)
+    loser?(tile) #|| winner?(tile)
   end
 
   def run
+    quit = false
+    until quit
+      quit = play_turn
+    end
+    board.render
+    puts "Game over. Thanks for playing"
   end
 
 end

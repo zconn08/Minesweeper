@@ -11,6 +11,9 @@ class Tile
   def self.change_flag
     @flagged ? @flagged = false : @flagged = true
   end
+  def bombed?
+    @bombed
+  end
   def reveal
     @revealed = true
   end

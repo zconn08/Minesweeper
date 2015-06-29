@@ -54,7 +54,7 @@ class Board
   end
 
   def value_checker(tile)
-    return "B" if tile.bombed
+    return "B" if tile.bombed?
     case tile.neighbor_bomb_count
     when 0
       "_"
