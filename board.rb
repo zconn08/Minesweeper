@@ -1,68 +1,51 @@
 require_relative 'tile.rb'
 class Board
 
-  attr_reader :grid
-
-
+  attr_reader :grid, :size
+  BOMB_SCARCITY = 8
 
   def initialize
-    @grid = Array.new(9) {Array.new(9)}
+    @size = 9
+    @grid = Array.new(size) {Array.new(size)}
     populate_grid
-    # assign_neighbors
   end
 
-  # def assign_neighbors
-  #
-  #   end
-  #
-  #   # @grid.flatten.each do |tile|
-  #   #   (0..8).each do |neighbor|
-  #   #     [x + dx]
-  #   #   end
-  #   end
-  # end
-
   def populate_grid
-    (0..8).each do |row|
-      (0..8).each do |col|
+    (0...size).each do |row|
+      (0...size).each do |col|
         position = [row,col]
-        @grid[row][col] = Tile.new(
-        self, position, [true,false,false,false,false,
-          false,false,false,false].sample
-          )
+        @grid[row][col] = create_tile(position)
       end
     end
   end
 
-  def create_tile
-    Tile.new(self)
+  def create_tile(position)
+    Tile.new(self, position, weighted_random_boolean(BOMB_SCARCITY))
+  end
+
+  def weighted_random_boolean(num)
+    rand(num) == 0 ? true : false
   end
 
   def render
-    @grid.each do |row|
+    puts
+    print " "
+    size.times { |index| print index }
+    puts
+    @grid.each_with_index do |row, index|
+      print index
       row.each do |tile|
-          if  tile.flagged
-            print "F"
-          elsif  tile.revealed
-            print value_checker(tile)
-          else
-            print "*"
-          end
+        print tile.to_s
       end
       puts
     end
   end
 
-  def value_checker(tile)
-    return "B" if tile.bombed?
-    case tile.neighbor_bomb_count
-    when 0
-      "_"
-    else
-      tile.neighbor_bomb_count.to_s
-    end
+  def [](pos)
+    grid[pos.first][pos.last]
   end
 
+  def onboard?(pos)
+    pos.all? { |coord| coord.between?(0, size - 1) }
+  end
 end
-board = Board.new
-board.render

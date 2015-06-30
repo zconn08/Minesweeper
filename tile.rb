@@ -1,6 +1,9 @@
+require 'byebug'
+
 class Tile
-  PERMUTATIONS = [-1,1,0].repeated_permutation(2).to_a.reject{ |el| el == [0,0] }
-  attr_reader :bombed, :flagged, :revealed
+  RELATIVE_POSITIONS = [-1,-1,0,1,1].permutation(2).to_a.uniq
+  attr_reader :bombed, :flagged, :revealed, :board
+
   def initialize(board, position, bombed = false)
     @board = board
     @bombed = bombed
@@ -8,39 +11,56 @@ class Tile
     @revealed = false
     @position = position
   end
-  def self.change_flag
-    @flagged ? @flagged = false : @flagged = true
+
+  def change_flag
+    @flagged = !@flagged
   end
+
   def bombed?
     @bombed
   end
+
   def reveal
+    return if @revealed
     @revealed = true
+    neighbors.each(&:reveal) if neighbor_bomb_count.zero?
   end
+
+  def revealed?
+    @revealed
+  end
+
   def neighbors
-    neighbors = []
-    PERMUTATIONS.each do |permutation|
-      dx = permutation[0]
-      dy = permutation[1]
-      [5,5]
-      row, col = @position
-      proposed_x = row + dx
-      proposed_y = col + dy
-      neighbors << [proposed_x, proposed_y] if ((0..8).include?(proposed_x) && (0..8).include?(proposed_y))
+    neighbors_list = []
+    RELATIVE_POSITIONS.each do |offset|
+      position = [
+        offset.first + @position.first,
+        offset.last + @position.last
+      ]
+      neighbors_list << board[position] if board.onboard?(position)
     end
-    neighbors
+    neighbors_list
   end
+
   def neighbor_bomb_count
     bomb_count = 0
     neighbors.each do |neighbor|
-        row, col = neighbor
-        bomb_count += 1 if @board.grid[row][col].bombed
+      bomb_count += 1 if neighbor.bombed?
     end
     bomb_count
   end
+
   def inspect
-    "bombed: #{self.bombed} \n
-    flagged: #{self.flagged} \n
-    revealed: #{self.revealed} \n"
+    "bombed: #{self.bombed} flagged: #{self.flagged} revealed: #{self.revealed}"
+  end
+
+  def to_s
+    if revealed
+      return "B" if self.bombed?
+      bomb_count = self.neighbor_bomb_count
+      bomb_count.zero? ? "_" : bomb_count
+    else
+      flagged ? "F" : "*"
+    end
   end
 end
