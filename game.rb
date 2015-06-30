@@ -1,24 +1,33 @@
 require_relative 'board'
+require 'yaml'
 class Minesweeper
   attr_reader :board
-  attr_accessor :result
+  attr_accessor :result, :quit
 
   def initialize
     @board = Board.new
   end
 
   def play_turn
-    board.render
-    puts "Please select a location to reveal: "
+
+    puts "Please select a location: "
     x, y = gets.chomp.strip.split(',').map(&:to_i)
     tile = board.grid[x][y]
-    tile.reveal
-    return true if over?(tile)
-    false
+
+    input = nil
+    until input == "f" || input == "r"
+      puts "Flag (f) or reveal (r)?"
+      input = gets.chomp.downcase.strip
+    end
+    input == "f" ? tile.change_flag : tile.reveal
+
   end
 
-  def loser?(tile)
-    if tile.bombed?
+  def loser?
+    loser = board.grid.flatten.any? do |tile|
+      tile.bombed? && tile.revealed?
+    end
+    if loser
       self.result = 'loser'
       true
     else
@@ -31,28 +40,42 @@ class Minesweeper
       tile.bombed? || tile.revealed?
     end
     if winner
-      @result = 'winner'
+      self.result = 'winner'
       true
     else
       false
     end
   end
 
-  def over?(tile)
-    loser?(tile) || winner?
+  def over?
+    loser? || winner?
   end
 
   def run
-    quit = false
-    until quit
-      quit = play_turn
+    board.render
+    until over?
+      play_turn
+      board.render
+      break if save_and_quit?
     end
     @board.grid.flatten.each {|tile| tile.reveal}
-    board.render
-    if @result == 'loser'
+    if self.result == 'loser'
       puts "Game over. Thanks for playing"
-    else
+    elsif self.result == 'winner'
       puts "Congratulations! You win!!!"
+    end
+  end
+
+  def save_and_quit?
+    puts "Would you like to save and quit('y')?"
+    input = gets.chomp.downcase.strip
+    if input == "y"
+      File.open("saved_game", 'w') do |file|
+        file.puts self.board.to_yaml
+      end
+      true
+    else
+      false
     end
   end
 
